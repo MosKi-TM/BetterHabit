@@ -119,19 +119,37 @@ router.post("/join/:code", async (req, res) => {
     }
   });
   
-// Fetch a group by ID and populate tasks
+// Fetch a group by ID and populate tasks with user-specific "completed" status
 router.get('/:id', async (req, res) => {
-    try {
-      const group = await Groups.findById(req.params.id).populate('tasks');
-      console.log(group);
-      if (!group) {
-        return res.status(404).json({ message: 'Group not found' });
+  try {
+    const group = await Groups.findById(req.params.id).populate({
+      path: 'tasks',
+      populate: {
+        path: 'completedBy',
+        select: '_id' // Only get user IDs
       }
-      res.json(group.tasks); // Send the group with its populated tasks
-    } catch (error) {
-      console.error('Error fetching group', error);
-      res.status(500).json({ message: 'Internal Server Error' });
+    });
+
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' });
     }
-  });
+
+    // Compute 'completed' per task based on current user
+    const userId = req.userId;
+    const updatedTasks = group.tasks.map(task => {
+      const isCompleted = task.completedBy.some(user => user._id.equals(userId));
+      return {
+        ...task.toObject(),
+        completed: isCompleted
+      };
+    });
+
+    res.json(updatedTasks);
+  } catch (error) {
+    console.error('Error fetching group', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
 
 export default router;

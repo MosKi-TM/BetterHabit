@@ -1,7 +1,7 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_BASE_URL = 'http://192.168.1.37:8000/api'; // replace with your backend's API URL
+const API_BASE_URL = 'http://192.168.1.132:8000/api'; // replace with your backend's API URL
 
 // Create an instance of axios with common headers
 const api = axios.create({
@@ -114,6 +114,7 @@ const addTaskToGroup = async (groupId, taskTitle) => {
       });
   
       // Return the task data
+      console.log(taskResponse.data);
       return taskResponse.data; // The response will contain the created task
     } catch (error) {
       console.error('Error adding task to group', error);
@@ -124,6 +125,7 @@ const addTaskToGroup = async (groupId, taskTitle) => {
 const getGroupById = async (groupId) => {
     try {
       const response = await api.get(`/groups/${groupId}`);
+      console.log(response.data)
       return response.data; // Return the group data with tasks
     } catch (error) {
       console.error('Error fetching group by ID', error);
@@ -131,7 +133,15 @@ const getGroupById = async (groupId) => {
     }
   };
   
-
+  const completeTask = async (taskId) => {
+    try {
+      const response = await api.post(`/tasks/${taskId}/complete`);
+      return response.data.task; // Updated task returned from backend
+    } catch (error) {
+      console.error("Error completing task", error);
+      throw error;
+    }
+  };
 export {
     login,
     signup,
@@ -141,6 +151,7 @@ export {
     getGroups,
     joinGroupByCode,
     addTaskToGroup,
-    getGroupById
+    getGroupById,
+    completeTask
   };
   

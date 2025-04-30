@@ -21,7 +21,8 @@ router.use((req, res, next) => {
 
 // Get all tasks
 router.get("/", async (req, res) => {
-  const tasks = await Task.find({ userId: req.userId });
+  let tasks = await Task.find({ userId: req.userId });
+
   res.json(tasks);
 });
 
@@ -52,5 +53,32 @@ router.post("/", async (req, res) => {
   }
 });
 
+// Mark task as completed by user
+router.post("/:id/complete", async (req, res) => {
+  const taskId = req.params.id;
+
+  try {
+    // Find the task by ID
+    const task = await Task.findById(taskId);
+
+    if (!task) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+
+    // Check if the user has already completed it
+    const alreadyCompleted = task.completedBy.includes(req.userId);
+
+    if (!alreadyCompleted) {
+      // Add user ID to completedBy
+      task.completedBy.push(req.userId);
+      await task.save();
+    }
+
+    res.status(200).json({ message: alreadyCompleted ? "Already completed" : "Marked as completed", task });
+  } catch (error) {
+    console.error("Error marking task as completed", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
 
 export default router;

@@ -2,15 +2,16 @@ import { StatusBar } from 'expo-status-bar';
 import { Platform, StyleSheet, Text, View, KeyboardAvoidingView, TextInput, TouchableOpacity, Keyboard } from 'react-native';
 import Task from '../../components/Task';
 import { useState, useEffect  } from 'react';
-import { addTaskToGroup, getGroupById } from '../../components/authManager/apiService'; // Import login from apiService
+import { addTaskToGroup, getGroupById, completeTask as completeTaskAPI } from '../../components/authManager/apiService'; // Import login from apiService
 
 export default function TaskScreen({ navigation, route }) {
 
   const [task, setTask] = useState([]);
   const [taskItems, setTaskItems] = useState([])
 
-  const {logo, name, id: groupId} = route.params;
-
+  const {logo, name, id: groupId, users} = route.params;
+  const nb_part = users.length;
+  console.log(users)
   // Fetch group tasks when the component is mounted
   useEffect(() => {
     const fetchGroupTasks = async () => {
@@ -35,18 +36,25 @@ export default function TaskScreen({ navigation, route }) {
   const createTaskAndUpdateGroup = async (taskTitle) => {
     try {
       const newTask = await addTaskToGroup(groupId, taskTitle); // addTaskToGroup sends POST request to create task
-      setTaskItems(prevItems => [...prevItems, {title: newTask}]); // Update task list with the new task
+      setTaskItems(prevItems => [...prevItems, newTask]); // Update task list with the new task
     } catch (error) {
       console.error('Error adding task to group:', error);
     }
   };
 
 
-  const completeTask = (index) => {
-    let itemsCopy = [...taskItems];
-    //itemsCopy.splice(index, 1);
-    setTaskItems(itemsCopy);
-  }
+  const completeTask = async (index) => {
+    const taskToComplete = taskItems[index];
+    const taskId = taskToComplete._id;
+   //33I3O1
+    try {
+      const updatedTask = await completeTaskAPI(taskId);
+      const group = await getGroupById(groupId); // Fetch group data
+      setTaskItems(group); // Assuming tasks are an array of task titles
+    } catch (error) {
+      console.error("Failed to complete task:", error);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -58,7 +66,7 @@ export default function TaskScreen({ navigation, route }) {
             {
               taskItems.map((item, index) => {
                   return <TouchableOpacity key={index} onPress={() => completeTask(index)}>
-                        <Task key={index} text={item.title}/>
+                        <Task key={index} text={item.title} completed={item.completed} completedBy={item.completedBy} users = {users}/>
                         </TouchableOpacity>
               })
             }

@@ -78,11 +78,14 @@ export default function HomeScreen({ navigation }) {
   const loadGroups = async () => {
     try {
       const groups = await getGroups();
+      
       const formatted = groups.map(group => ({
         name: group.title + " : " +group.code,
         logo: '📌', // Use emoji or adapt based on backend data
-        id: group._id
+        id: group._id,
+        users: group.users
       }));
+      
       setGroupItems(formatted);
     } catch (error) {
       console.error("Failed to fetch groups", error);
@@ -93,7 +96,7 @@ export default function HomeScreen({ navigation }) {
   const createNewList = async (clip) => {
     try {
       const group = await createGroup(clip.title);
-      setGroupItems(prev => [...prev, { name: group.title, logo: clip.logo, id: group._id }]);
+      await loadGroups();
     } catch (err) {
       console.error("Group creation failed", err);
     }
